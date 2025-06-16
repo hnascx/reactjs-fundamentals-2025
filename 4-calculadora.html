@@ -135,6 +135,22 @@
       ],
     ]
 
+    const CalculatorContext = React.createContext()
+
+    function CalculatorProvider({ children }) {
+      const [history, setHistory] = React.useState([])
+
+      function updateHistory(operation, parsedResult) {
+        setHistory((prev) => [...prev, `${operation}=${parsedResult}`])
+      }
+
+      return (
+        <CalculatorContext.Provider value={{ history, updateHistory }}>
+          {children}
+        </CalculatorContext.Provider>
+      )
+    }
+
     function CalculatorDisplay({ operation, result }) {
       return (
         <div className={`
@@ -165,6 +181,8 @@
       const [operation, setOperation] = React.useState('')
       const [result, setResult] = React.useState('')
 
+      const { updateHistory } = React.useContext(CalculatorContext)
+
       function handleInputClick(input) {
         if (input === 'C') {
           setOperation('')
@@ -182,6 +200,7 @@
           const operationResult = eval(operation.replace(/,/g, '.'))
           const parsedResult = operationResult.toString()?.replace(/\./g, ',')
           setResult(parsedResult)
+          updateHistory(operation, parsedResult)
           return
         }
 
@@ -234,6 +253,8 @@
     }
 
     function OperationHistory() {
+      const { history } = React.useContext(CalculatorContext)
+
       return (
         <Card className="w-full py-10 px-8">
           <Text 
@@ -243,12 +264,20 @@
           >
             Histórico de operações
           </Text>
-
-          <ul className="flex flex-col gap-3">
-            <Text as="li">1 + 1 = 2</Text>  
-            <Text as="li">2 + 2 = 4</Text>  
-            <Text as="li">3 + 3 = 6</Text>  
-          </ul>
+          {history.length > 0 ? (
+            <ul className="flex flex-col gap-3">
+              {history.map((value, index) => (
+                <Text key={`item-${index}`} as="li">
+                  {value}
+                </Text>  
+              ))}
+            </ul>
+          ) : (
+              <Text as="p" variant="muted">
+                Nenhuma operação registrada
+              </Text>
+            )
+          }  
         </Card>
       )
     }
@@ -259,8 +288,10 @@
           py-28 px-4 sm:px-10 flex flex-col sm:flex-row items-center sm:items-stretch gap-2
         `}
         >
-          <Calculator />
-          <OperationHistory />
+          <CalculatorProvider>
+            <Calculator />
+            <OperationHistory />
+          </CalculatorProvider>
         </main>
       )
     }
