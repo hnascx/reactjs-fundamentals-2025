@@ -139,9 +139,22 @@
 
     function CalculatorProvider({ children }) {
       const [history, setHistory] = React.useState([])
+      const historyStorageKey = 'history'
 
       function updateHistory(operation, parsedResult) {
-        setHistory((prev) => [...prev, `${operation}=${parsedResult}`])
+        setHistory((prev) => {
+          const updatedHistory = [
+            ...prev, 
+            `${operation}=${parsedResult}`
+          ]
+          
+          localStorage.setItem(
+            historyStorageKey,
+            JSON.stringify(updatedHistory)
+          )
+
+          return updatedHistory
+        })
       }
 
       return (
@@ -198,7 +211,14 @@
 
         if (input === '=') {
           const operationResult = eval(operation.replace(/,/g, '.'))
-          const parsedResult = operationResult.toString()?.replace(/\./g, ',')
+
+          const formattedResult = 
+            operationResult.toString().includes('.') && operationResult.toString().split('.')[1].length > 10
+              ? Number(operationResult.toFixed(10))
+              : operationResult;
+
+          const parsedResult = formattedResult.toString()?.replace(/\./g, ',')
+
           setResult(parsedResult)
           updateHistory(operation, parsedResult)
           return
